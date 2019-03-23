@@ -39,7 +39,7 @@ namespace nc
             {
                 app.UseHsts();
             }
-
+            app.UseCors();
             app.UseHttpsRedirection();
             app.UseMvc();
         }
