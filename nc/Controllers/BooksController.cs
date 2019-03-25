@@ -16,10 +16,11 @@ namespace nc.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
-        IMongoDatabase db = DbManager.BaseManager.GetDataBase("Bookdb");
+        IMongoDatabase db;
         IMongoCollection<Book> books;
         public BooksController()
         {
+            db = new DbManager.BaseManager().GetDataBase("Bookdb");
             books = db.GetCollection<Book>("Books");
         }
 

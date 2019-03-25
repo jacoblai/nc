@@ -26,7 +26,8 @@ namespace nc
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2).ConfigureApiBehaviorOptions(options =>
+            services.AddMvc()
+            .SetCompatibilityVersion(CompatibilityVersion.Version_2_2).ConfigureApiBehaviorOptions(options =>
             {
                 options.SuppressConsumesConstraintForFormFileParameters = true;
                 options.SuppressInferBindingSourcesForParameters = true;
@@ -76,6 +77,7 @@ namespace nc
                         .AllowAnyHeader()
                         .AllowCredentials());
             });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -89,9 +91,10 @@ namespace nc
             {
                 app.UseHsts();
             }
+
             app.UseCors("CorsPolicy");
 
-            app.UseStaticFiles(); // For the wwwroot folder
+            //app.UseStaticFiles(); // For the wwwroot folder
             //app.UseStaticFiles(new StaticFileOptions
             //{
             //    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "MyStaticFiles")),
