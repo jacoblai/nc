@@ -1,6 +1,8 @@
 ﻿using System;
 using MongoDB.Driver;
 using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace nc.DbManager
 {
@@ -8,20 +10,14 @@ namespace nc.DbManager
     {
         static MongoClient client;
         static IMongoDatabase db;
-        public BaseManager(IConfiguration config)
-        {
-            if (client == null)
-            {
-                client = new MongoClient(config.GetConnectionString("Db"));
-                client.Settings.ReadPreference = ReadPreference.PrimaryPreferred;
-                client.Settings.WriteConcern = WriteConcern.WMajority;
-                client.Settings.MaxConnectionPoolSize = 4000;
-                client.Settings.MinConnectionPoolSize = 50;
-            }
-        }
+        static string constr = "mongodb://localhost:27017";
        
         public static IMongoDatabase GetDataBase(string dbName)
         {
+            if (client == null)
+            {
+                client = new MongoClient(constr);
+            }
             if (db == null)
             {
                 db = client.GetDatabase(dbName);

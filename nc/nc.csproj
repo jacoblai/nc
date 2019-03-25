@@ -18,5 +18,7 @@
 
   <ItemGroup>
     <Compile Remove="Services\BookService.cs" />
+    <Compile Remove="Controllers\ValuesController.cs" />
+    <Compile Remove="新建文件夹\Book.cs" />
   </ItemGroup>
 </Project>
