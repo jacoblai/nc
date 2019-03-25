@@ -10,7 +10,7 @@ namespace nc.DbManager
     {
         static MongoClient client;
         static IMongoDatabase db;
-        static string constr = "mongodb://localhost:27017";
+        static string constr = "mongodb://root:CareDaily20191123@192.168.100.251:27017,192.168.100.252:27017,192.168.100.250:27017/?authSource=admin&readPreference=primaryPreferred&replicaSet=rs1";
        
         public static IMongoDatabase GetDataBase(string dbName)
         {

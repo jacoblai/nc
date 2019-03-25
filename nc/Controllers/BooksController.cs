@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using BooksApi.Models;
@@ -32,7 +33,6 @@ namespace nc.Controllers
             return bd.ToJson();
         }
 
-        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         [Route("report/fileupload/{rpname}")]
         public async Task<IActionResult> UploadFile(List<IFormFile> files)
@@ -70,15 +70,15 @@ namespace nc.Controllers
         public async Task<IActionResult> Get()
         {
             //禁止使用decimal，转用double型
-            var names = await books.Find(x => x.Price >50 && x.Price <300).ToListAsync();
-            return Ok(names);
+            //var names = await books.Find(x => x.Price >50 && x.Price <300).ToListAsync();
+            //return new OkObjectResult(names);
 
-            ////日期时间操作提交时必须是utc时间
-            ////日期时间查询时必须先转为本地时间
-            //var start = DateTime.Parse("2015-07-11T15:07:41").ToLocalTime();
-            //var end = DateTime.Parse("2015-07-12T03:01:37").ToLocalTime();
-            //var names = await books.Find(x => x.ReleaseDate.ToLocalTime() >= start && x.ReleaseDate.ToLocalTime() <= end).ToListAsync();
-            //return Ok(names);
+            //日期时间操作提交时必须是utc时间
+            //日期时间查询时必须先转为本地时间
+            var start = DateTime.Parse("2015-07-11T15:07:41").ToLocalTime();
+            var end = DateTime.Parse("2015-07-12T03:01:37").ToLocalTime();
+            var names = await books.Find(x => x.ReleaseDate.ToLocalTime() >= start && x.ReleaseDate.ToLocalTime() <= end).ToListAsync();
+            return Ok(names);
 
             //var bks = await books.Find(new BsonDocument()).ToListAsync();
             //return Ok(bks);
@@ -104,46 +104,44 @@ namespace nc.Controllers
                 return NotFound();
             }
 
-            return Ok(book.ToJson());
+            return new OkObjectResult(book);
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Create(Book book)
+        public async Task<IActionResult> Create([FromBody]Book book)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
             //时区+8
-            book.ReleaseDate = book.ReleaseDate.ToLocalTime();
+            book.ReleaseDate = DateTime.Now.AddHours(8);
             await books.InsertOneAsync(book);
 
-            return Ok(book.ToJson());
+            return new OkObjectResult(book);
         }
 
         [HttpPut("{id:length(24)}")]
-        public async Task<IActionResult> Update(string id, Book bookIn)
+        public async Task<IActionResult> Update(string id, [FromBody]Book bookIn)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (ObjectId.Parse(id) != bookIn.Id)
-            {
-                return BadRequest();
-            }
-
             //var result = await books.UpdateOneAsync(x => x.Id == ObjectId.Parse(id), Builders<Book>.Update.Set(x => x, book)); 
             var dbbook = await books.Find(x => x.Id == ObjectId.Parse(id)).SingleAsync();
             dbbook.BookName = bookIn.BookName;
             dbbook.Price = bookIn.Price;
-            dbbook.ReleaseDate = bookIn.ReleaseDate.ToLocalTime();
+            if (bookIn.ReleaseDate != DateTime.MinValue)
+            {
+                dbbook.ReleaseDate = bookIn.ReleaseDate;
+            }
             dbbook.Author = bookIn.Author;
-            var result = await books.ReplaceOneAsync(x => x.Id == ObjectId.Parse(id), dbbook);
-            return NoContent();
+            var result = await books.FindOneAndReplaceAsync(x => x.Id == ObjectId.Parse(id), dbbook);
+            return new OkObjectResult(result);
         }
 
         [HttpDelete("{id:length(24)}")]
@@ -156,7 +154,7 @@ namespace nc.Controllers
 
             var result = await books.DeleteOneAsync(x => x.Id == ObjectId.Parse(id));
 
-            return Ok(result);
+            return new OkObjectResult(result);
         }
 
         private async Task<bool> BookExists(string id)
