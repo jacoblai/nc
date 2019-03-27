@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using BooksApi.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using nc.Utils;
 
 namespace nc.Controllers
 {
@@ -17,11 +17,11 @@ namespace nc.Controllers
     public class BooksController : ControllerBase
     {
         IMongoDatabase db;
-        IMongoCollection<Book> books;
+        IMongoCollection<BsonDocument> books;
         public BooksController()
         {
             db = new DbManager.BaseManager().GetDataBase("Bookdb");
-            books = db.GetCollection<Book>("Books");
+            books = db.GetCollection<BsonDocument>("Books");
         }
 
         //customer api
@@ -68,21 +68,35 @@ namespace nc.Controllers
 
         //[DeflateCompression]//using zlib compression
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get([FromQuery]int skip, [FromQuery]int limit)
         {
+            var ops = new FindOptions
+            {
+                MaxTime = TimeSpan.FromMilliseconds(20),
+                BatchSize = 20000
+            };
+
             //禁止使用decimal，转用double型
-            //var names = await books.Find(x => x.Price >50 && x.Price <300).ToListAsync();
-            //return new OkObjectResult(names);
+            //var cond = BsonDocument.Parse("{$and:[{price:{$gte:20}},{price:{$lte:100}}]}");
+            //var proj = BsonDocument.Parse("{category:0}");
+            //var sort = BsonDocument.Parse("{releaseDate:-1}");
+            //var res = await books.Find(cond, ops).Sort(sort).Project(proj).Skip(skip).Limit(limit).ToListAsync();
 
             //日期时间操作提交时必须是utc时间
             //日期时间查询时必须先转为本地时间
-            var start = DateTime.Parse("2015-07-11T15:07:41").ToLocalTime();
-            var end = DateTime.Parse("2015-07-12T03:01:37").ToLocalTime();
-            var names = await books.Find(x => x.ReleaseDate.ToLocalTime() >= start && x.ReleaseDate.ToLocalTime() <= end).ToListAsync();
-            return Ok(names);
+            //配合insert时使用了+8时区
+            var start = DateTime.Parse("2019-03-27T00:00:00").AddHours(8);
+            var end = DateTime.Parse("2019-03-30T03:01:37").AddHours(8);
+            var cond = new BsonDocument
+            {{ "$and", new BsonArray
+                       {
+                            new BsonDocument("releaseDate", new BsonDocument("$gte", start)),
+                            new BsonDocument("releaseDate", new BsonDocument("$lte", end))
+                       }
+             }};
+            var res = await books.Find(cond, ops).ToListAsync();
 
-            //var bks = await books.Find(new BsonDocument()).ToListAsync();
-            //return Ok(bks);
+            return new OkObjectResult(new Result() { Ok = true, Change = res.Count, Data = res });
         }
 
         [HttpGet("{id:length(24)}", Name = "GetBook")]
@@ -99,75 +113,67 @@ namespace nc.Controllers
             {
                 return NotFound();
             }
-            var book = await books.Find(new BsonDocument("_id", oid)).FirstOrDefaultAsync();
-            if (book == null)
+            var res = await books.Find(new BsonDocument("_id", oid)).FirstOrDefaultAsync();
+            if (res == null)
             {
                 return NotFound();
             }
 
-            return new OkObjectResult(book);
+            return new OkObjectResult(new Result() { Ok = true, Change = 1, Data = res });
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Create([FromBody]Book book)
+        public async Task<IActionResult> Create([FromBody]string rawString)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
-            }
-            //时区+8
-            book.ReleaseDate = DateTime.Now.AddHours(8);
-            await books.InsertOneAsync(book);
+                var obj = BsonDocument.Parse(rawString);
+                //时区+8
+                obj["releaseDate"] = DateTime.Now.AddHours(8);
+                await books.InsertOneAsync(obj);
 
-            return new OkObjectResult(book);
+                return new OkObjectResult(new Result() { Ok = true, Change = 1, Data = obj });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut("{id:length(24)}")]
-        public async Task<IActionResult> Update(string id, [FromBody]Book bookIn)
+        public async Task<IActionResult> Update(string id, [FromBody]string rawString)
         {
-            if (!ModelState.IsValid)
+            var obj = BsonDocument.Parse(rawString);
+            if (!ObjectId.TryParse(id, out ObjectId oid))
             {
-                return BadRequest(ModelState);
+                return NotFound();
             }
 
-            //var result = await books.UpdateOneAsync(x => x.Id == ObjectId.Parse(id), Builders<Book>.Update.Set(x => x, book)); 
-            var dbbook = await books.Find(x => x.Id == ObjectId.Parse(id)).SingleAsync();
-            dbbook.BookName = bookIn.BookName;
-            dbbook.Price = bookIn.Price;
-            if (bookIn.ReleaseDate != DateTime.MinValue)
+            //BsonDocument ups = new BsonDocument {
+            //         { "bookName", obj.BookName },
+            //         { "price", obj.Price },
+            //         { "author", obj.Author },
+            //          { "category", obj.Category },
+            //     };
+            if (obj.Contains("releaseDate") && obj["releaseDate"] != DateTime.MinValue)
             {
-                dbbook.ReleaseDate = bookIn.ReleaseDate;
+                obj["releaseDate"] = obj["releaseDate"];
             }
-            dbbook.Author = bookIn.Author;
-            var result = await books.FindOneAndReplaceAsync(x => x.Id == ObjectId.Parse(id), dbbook);
-            return new OkObjectResult(result);
+            var res = await books.UpdateManyAsync(new BsonDocument("_id", oid), new BsonDocument("$set", obj));
+            return new OkObjectResult(new Result() { Ok = true, Change=res.ModifiedCount });
         }
 
         [HttpDelete("{id:length(24)}")]
         public async Task<IActionResult> Delete(string id)
         {
-            if (!await BookExists(id))
+            if (!ObjectId.TryParse(id, out ObjectId oid))
             {
                 return NotFound();
             }
-
-            var result = await books.DeleteOneAsync(x => x.Id == ObjectId.Parse(id));
-
-            return new OkObjectResult(result);
+            var res = await books.DeleteOneAsync(new BsonDocument("_id", oid));
+            return new OkObjectResult(new Result() { Ok = true, Change = res.DeletedCount });
         }
-
-        private async Task<bool> BookExists(string id)
-        {
-            var c = await books.CountDocumentsAsync<Book>(e => e.Id == ObjectId.Parse(id));
-            if (c > 0)
-            {
-                return true;
-            }
-            return false;
-        }
-
-
     }
 }

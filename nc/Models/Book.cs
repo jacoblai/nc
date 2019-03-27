@@ -11,19 +11,19 @@ namespace BooksApi.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public ObjectId Id { get; set; }
 
-        [BsonElement("BookName")]
+        [BsonElement("bookName")]
         public string BookName { get; set; }
 
-        [BsonElement("Price")]
-        public decimal Price { get; set; }
+        [BsonElement("price")]
+        public double Price { get; set; }
 
-        [BsonElement("Category")]
+        [BsonElement("category")]
         public string Category { get; set; }
 
         [BsonIgnoreIfNull]
-        [BsonElement("Author")]
+        [BsonElement("author")]
         public string Author { get; set; }
-
+        [BsonElement("releaseDate")]
         public DateTime ReleaseDate { get; set; }
     }
 }

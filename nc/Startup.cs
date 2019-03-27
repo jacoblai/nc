@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using MongoDB.Integrations.JsonDotNet.Converters;
 using nc.Nexts;
+using nc.Utils;
 
 namespace nc
 {
@@ -60,6 +61,9 @@ namespace nc
                 options.SerializerSettings.Converters.Add(new BsonMaxKeyConverter());
                 options.SerializerSettings.Converters.Add(new ObjectIdConverter());
             });
+
+            services.AddMvc(o => o.InputFormatters.Insert(0, new RawRequestBodyFormatter()));
+
             CultureInfo.CurrentCulture = new CultureInfo("zh-CN");
 
             services.AddResponseCompression(options =>
