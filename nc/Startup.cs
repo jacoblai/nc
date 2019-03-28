@@ -1,18 +1,14 @@
-﻿using System;
-using System.Globalization;
-using System.IO;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using MongoDB.Integrations.JsonDotNet.Converters;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using nc.Nexts;
 using nc.Utils;
-using Swashbuckle.AspNetCore.Swagger;
 
 namespace nc
 {
@@ -28,41 +24,40 @@ namespace nc
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
-            //.SetCompatibilityVersion(CompatibilityVersion.Version_2_2).ConfigureApiBehaviorOptions(options =>
-            //{
-            //    options.SuppressConsumesConstraintForFormFileParameters = true;
-            //    options.SuppressInferBindingSourcesForParameters = true;
-            //    options.SuppressModelStateInvalidFilter = true;
-            //    options.SuppressMapClientErrors = true;
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2).ConfigureApiBehaviorOptions(options =>
+            {
+                options.SuppressConsumesConstraintForFormFileParameters = true;
+                options.SuppressInferBindingSourcesForParameters = true;
+                options.SuppressModelStateInvalidFilter = true;
+                options.SuppressMapClientErrors = true;
 
-            //    //options.ClientErrorMapping[404].Link ="https://httpstatuses.com/404";
-            //})
-            //.AddJsonOptions(options =>
-            //{
-            //    // Adds automatic json parsing to BsonDocuments.
-            //    options.SerializerSettings.Converters.Add(new BsonArrayConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonMinKeyConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonBinaryDataConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonNullConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonBooleanConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonObjectIdConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonDateTimeConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonRegularExpressionConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonDocumentConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonStringConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonDoubleConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonSymbolConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonInt32Converter());
-            //    options.SerializerSettings.Converters.Add(new BsonTimestampConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonInt64Converter());
-            //    options.SerializerSettings.Converters.Add(new BsonUndefinedConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonJavaScriptConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonValueConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonJavaScriptWithScopeConverter());
-            //    options.SerializerSettings.Converters.Add(new BsonMaxKeyConverter());
-            //    options.SerializerSettings.Converters.Add(new ObjectIdConverter());
-            //});
+                //options.ClientErrorMapping[404].Link ="https://httpstatuses.com/404";
+            })
+            .AddJsonOptions(options =>
+            {
+                // Adds automatic json parsing to BsonDocuments.
+                options.SerializerSettings.Converters.Add(new BsonArrayConverter());
+                options.SerializerSettings.Converters.Add(new BsonMinKeyConverter());
+                options.SerializerSettings.Converters.Add(new BsonBinaryDataConverter());
+                options.SerializerSettings.Converters.Add(new BsonNullConverter());
+                options.SerializerSettings.Converters.Add(new BsonBooleanConverter());
+                options.SerializerSettings.Converters.Add(new BsonObjectIdConverter());
+                options.SerializerSettings.Converters.Add(new BsonDateTimeConverter());
+                options.SerializerSettings.Converters.Add(new BsonRegularExpressionConverter());
+                options.SerializerSettings.Converters.Add(new BsonDocumentConverter());
+                options.SerializerSettings.Converters.Add(new BsonStringConverter());
+                options.SerializerSettings.Converters.Add(new BsonDoubleConverter());
+                options.SerializerSettings.Converters.Add(new BsonSymbolConverter());
+                options.SerializerSettings.Converters.Add(new BsonInt32Converter());
+                options.SerializerSettings.Converters.Add(new BsonTimestampConverter());
+                options.SerializerSettings.Converters.Add(new BsonInt64Converter());
+                options.SerializerSettings.Converters.Add(new BsonUndefinedConverter());
+                options.SerializerSettings.Converters.Add(new BsonJavaScriptConverter());
+                options.SerializerSettings.Converters.Add(new BsonValueConverter());
+                options.SerializerSettings.Converters.Add(new BsonJavaScriptWithScopeConverter());
+                options.SerializerSettings.Converters.Add(new BsonMaxKeyConverter());
+                options.SerializerSettings.Converters.Add(new ObjectIdConverter());
+            });
 
             services.AddMvc(o => o.InputFormatters.Insert(0, new RawRequestBodyFormatter()));
 
@@ -84,20 +79,13 @@ namespace nc
                         .AllowCredentials());
             });
 
-            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
-            services.AddSwaggerGen(c =>
+            services.AddApiVersioning(option =>
             {
-                c.SwaggerDoc("v1", new Info
-                {
-                    Version = "v1",
-                    Title = "NC API",
-                    Description = ".NET Core Web API Template",
-                    TermsOfService = "Coolpy",
-                    Contact = new Contact { Name = "内Cool超人", Email = "5241871@qq.com", Url = "https://coolpy.net" },
-                    License = new License { Name = "MIT", Url = "https://example.com/license" }
-                });
+                // allow a client to call you without specifying an api version
+                // since we haven't configured it otherwise, the assumed api version will be 1.0
+                option.AssumeDefaultVersionWhenUnspecified = true;
+                option.ReportApiVersions = false;
             });
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -125,9 +113,6 @@ namespace nc
 
             //app.UseHttpsRedirection();
             app.UseMvc();
-
-            // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger();
         }
     }
 }

@@ -11,8 +11,9 @@ using nc.Utils;
 
 namespace nc.Controllers
 {
+    [ApiVersion("1.0", Deprecated = false)]
     [Produces("application/json")]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     public class BooksController : ControllerBase
     {
@@ -24,7 +25,12 @@ namespace nc.Controllers
             books = db.GetCollection<BsonDocument>("Books");
         }
 
-        //customer api
+        /// <summary>
+        /// 查询订单
+        /// </summary>
+        /// <param name="customerId">客户编号</param>
+        /// <param name="orderId">订单ID</param>
+        /// <returns></returns>
         [Route("customers/{customerId}/orders/{orderId}")]
         public string GetOrderByCustomer(int customerId, int orderId)
         {

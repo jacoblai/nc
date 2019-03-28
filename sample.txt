@@ -1,4 +1,4 @@
-POST http://localhost:4000/api/books HTTP/1.1
+POST http://localhost:4000/api/v1.0/books HTTP/1.1
 User-Agent: Fiddler
 Host: localhost:4000
 Content-Length: 79
@@ -20,7 +20,7 @@ Transfer-Encoding: chunked
 
 ------------------------------------------------------------------
 
-GET http://localhost:4000/api/books?skip=3&limit=3 HTTP/1.1
+GET http://localhost:4000/api/v1.0/books?skip=3&limit=3 HTTP/1.1
 User-Agent: Fiddler
 Host: localhost:4000
 Content-Length: 0
@@ -41,7 +41,7 @@ Transfer-Encoding: chunked
 
 ------------------------------------------------------------------
 
-PUT http://localhost:4000/api/books/5c9aff597c45ec0dc031af97 HTTP/1.1
+PUT http://localhost:4000/api/v1.0/books/5c9aff597c45ec0dc031af97 HTTP/1.1
 User-Agent: Fiddler
 Host: localhost:4000
 Content-Length: 120
@@ -63,7 +63,7 @@ Transfer-Encoding: chunked
 
 ------------------------------------------------------------------
 
-DELETE http://localhost:4000/api/books/5c9aff597c45ec0dc031af97 HTTP/1.1
+DELETE http://localhost:4000/api/v1.0/books/5c9aff597c45ec0dc031af97 HTTP/1.1
 User-Agent: Fiddler
 Host: localhost:4000
 Content-Length: 0
