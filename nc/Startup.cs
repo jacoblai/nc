@@ -12,6 +12,7 @@ using Microsoft.Extensions.FileProviders;
 using MongoDB.Integrations.JsonDotNet.Converters;
 using nc.Nexts;
 using nc.Utils;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace nc
 {
@@ -83,6 +84,20 @@ namespace nc
                         .AllowCredentials());
             });
 
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info
+                {
+                    Version = "v1",
+                    Title = "NC API",
+                    Description = ".NET Core Web API Template",
+                    TermsOfService = "Coolpy",
+                    Contact = new Contact { Name = "内Cool超人", Email = "5241871@qq.com", Url = "https://coolpy.net" },
+                    License = new License { Name = "MIT", Url = "https://example.com/license" }
+                });
+            });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -110,6 +125,9 @@ namespace nc
 
             //app.UseHttpsRedirection();
             app.UseMvc();
+
+            // Enable middleware to serve generated Swagger as a JSON endpoint.
+            app.UseSwagger();
         }
     }
 }
